@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde::de::StdError;
 use uuid::Uuid;
 use crate::security::passwords::hash_password;
+use crate::types::types::{RequestError, ReturnUser};
 
 #[derive(Deserialize)]
 pub struct RequestUser {
@@ -14,21 +15,12 @@ pub struct RequestUser {
     password: String,
     username: String,
 }
-#[derive(Serialize)]
-pub struct ReturnUser {
-    jwt: String,
-    user_id: String,
-}
-#[derive(Serialize)]
-pub struct RegisterError{
-    message: String,
-}
 
 #[derive(Serialize)]
 #[serde(untagged)]
 pub enum ReturnType {
     ReturnUser(ReturnUser),
-    Error(RegisterError),
+    Error(RequestError),
 }
 
 pub async fn register(
@@ -36,21 +28,21 @@ pub async fn register(
     Json(mut payload): Json<RequestUser>,
 ) -> (StatusCode, Json<ReturnType>) {
     if payload.email.is_empty() || payload.password.is_empty() || payload.username.is_empty(){
-        return (StatusCode::BAD_REQUEST, Json(ReturnType::Error(RegisterError { message: String::from("Not every field satisfied") })));
+        return (StatusCode::BAD_REQUEST, Json(ReturnType::Error(RequestError::from("Not every field satisfied"))));
     }
     if !payload.email.contains('@'){
-        return (StatusCode::BAD_REQUEST, Json(ReturnType::Error(RegisterError { message: String::from("Invalid e-mail address")})));
+        return (StatusCode::BAD_REQUEST, Json(ReturnType::Error(RequestError::from("Invalid e-mail address"))));
     }
     if payload.password.len() < 3 || payload.username.len() < 3{
-        return (StatusCode::BAD_REQUEST, Json(ReturnType::Error(RegisterError { message: String::from("Password or Username is too short (<4)")})));
+        return (StatusCode::BAD_REQUEST, Json(ReturnType::Error(RequestError::from("Password or Username is too short (<4)"))));
     }
 
-    if let Ok(used) = check_username_free(&session, &payload.username).await {
+    if let Ok(used) = check_username_free(&session, &payload.username, &payload.email).await {
         if used {
-            return (StatusCode::BAD_REQUEST, Json(ReturnType::Error(RegisterError { message: String::from("Username already used")})));
+            return (StatusCode::BAD_REQUEST, Json(ReturnType::Error(RequestError::from("Username/Email already used"))));
         }
     }else{
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(ReturnType::Error(RegisterError { message: String::from("register#0x01 Internal server error")})));
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(ReturnType::Error(RequestError::from("register#0x01 Internal server error"))));
     }
     if let Ok(user) = insert_user(&session, &mut payload).await{
         (StatusCode::CREATED, Json(ReturnType::ReturnUser(ReturnUser{
@@ -58,12 +50,13 @@ pub async fn register(
             user_id: user.1.to_string(),
         })))
     }else{
-        (StatusCode::INTERNAL_SERVER_ERROR, Json(ReturnType::Error(RegisterError { message: String::from("register#0x02 Internal server error")})))
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(ReturnType::Error(RequestError::from("register#0x02 Internal server error"))))
     }
 }
 
-async fn check_username_free(session: &Arc<Session>, username: &String) -> Result<bool, Box<dyn StdError>> {
+async fn check_username_free(session: &Arc<Session>, username: &String, email: &String) -> Result<bool, Box<dyn StdError>> {
     let result = session.query_unpaged("SELECT user_id FROM joltamp.users WHERE username = ? ALLOW FILTERING", (username, )).await?.into_rows_result()?;
+    let result2 = session.query_unpaged("SELECT user_id FROM joltamp.users WHERE email = ? ALLOW FILTERING", (email, )).await?.into_rows_result()?;
 
     Ok(result.rows_num() != 0)
 }

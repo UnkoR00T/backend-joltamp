@@ -51,6 +51,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.95"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
+
+[[package]]
 name = "arc-swap"
 version = "1.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -143,12 +149,15 @@ dependencies = [
 name = "backend-joltamp-rewrite"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "argon2",
  "axum",
+ "chrono",
  "dotenv",
  "rand",
  "scylla",
  "serde",
+ "serde_json",
  "thiserror",
  "tokio",
  "tracing",
@@ -242,7 +251,9 @@ checksum = "7e36cc9d416881d2e24f9a963be5fb1cd90966419ac844274161d10488b3e825"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
+ "js-sys",
  "num-traits",
+ "wasm-bindgen",
  "windows-targets",
 ]
 

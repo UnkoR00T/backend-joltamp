@@ -3,7 +3,6 @@ use argon2::{password_hash::{
     PasswordHash, PasswordHasher, PasswordVerifier, SaltString
 }, Argon2};
 
-// type DynError = Box<dyn argon2::password_hash::Error + Send + Sync>;
 pub fn hash_password(password: &mut String) -> Result<String, argon2::password_hash::Error> {
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
