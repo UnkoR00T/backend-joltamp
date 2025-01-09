@@ -58,7 +58,7 @@ async fn check_username_free(session: &Arc<Session>, username: &String, email: &
     let result = session.query_unpaged("SELECT user_id FROM joltamp.users WHERE username = ? ALLOW FILTERING", (username, )).await?.into_rows_result()?;
     let result2 = session.query_unpaged("SELECT user_id FROM joltamp.users WHERE email = ? ALLOW FILTERING", (email, )).await?.into_rows_result()?;
 
-    Ok(result.rows_num() != 0)
+    Ok(result.rows_num() != 0 || result2.rows_num() != 0)
 }
 
 async fn insert_user(session: &Arc<Session>, payload: &mut RequestUser) -> Result<(Uuid, Uuid), Box<dyn StdError>> {

@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 use scylla::{QueryRowsResult, Session};
-use serde_json::Value;
 use uuid::Uuid;
 use anyhow::{Error, Result};
 use scylla::frame::value::CqlDate;
