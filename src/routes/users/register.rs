@@ -54,6 +54,12 @@ pub async fn register(
     }
 }
 
+
+/// Checks if username is already used in database
+/// 
+/// Returns Ok(true) if username is already used
+/// 
+/// Returns Ok(false if username is free to use
 async fn check_username_free(session: &Arc<Session>, username: &String, email: &String) -> Result<bool, Box<dyn StdError>> {
     let result = session.query_unpaged("SELECT user_id FROM joltamp.users WHERE username = ? ALLOW FILTERING", (username, )).await?.into_rows_result()?;
     let result2 = session.query_unpaged("SELECT user_id FROM joltamp.users WHERE email = ? ALLOW FILTERING", (email, )).await?.into_rows_result()?;
@@ -61,6 +67,9 @@ async fn check_username_free(session: &Arc<Session>, username: &String, email: &
     Ok(result.rows_num() != 0 || result2.rows_num() != 0)
 }
 
+/// Pushes user to database
+/// and returns generated jwt and user_id from
+/// function to return it to end user
 async fn insert_user(session: &Arc<Session>, payload: &mut RequestUser) -> Result<(Uuid, Uuid), Box<dyn StdError>> {
     let gen_jwt = Uuid::new_v4();
     let gen_user_id = Uuid::new_v4();

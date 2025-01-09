@@ -28,8 +28,11 @@ pub async fn login(
 ) -> (StatusCode, Json<ReturnType>) {
     
     let user: User = User::from_user_email(payload.email).fill_info(&session).await.unwrap();
-
+    
+    // Check if password was successfully fetched
     if let Some(password) = user.password {
+        
+        // Verify password
         if verify_password(&payload.password, &password).is_ok() {
             return (StatusCode::OK, Json(ReturnType::ReturnUser(ReturnUser { jwt: user.jwt.unwrap_or(Uuid::nil()).to_string(), user_id: user.user_id.unwrap_or(Uuid::nil()).to_string(), })));
         } else {

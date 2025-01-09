@@ -21,7 +21,10 @@ pub struct User {
     pub backgroundcolor: Option<String>,
 }
 
+// User implementation of functions that return user objects from accessible data
 impl User {
+
+    /// Creates user object from user id
     pub fn from_user_id(user_id: Uuid) -> User {
         User {
             createdat: None,
@@ -38,6 +41,7 @@ impl User {
             backgroundcolor: None,
         }
     }
+    /// Creates user object from user jwt
     pub fn from_user_jwt(jwt: Uuid) -> User {
         User {
             createdat: None,
@@ -54,6 +58,8 @@ impl User {
             backgroundcolor: None,
         }
     }
+
+    /// Creates user object from user email
     pub fn from_user_email(email: String) -> User {
         User {
             createdat: None,
@@ -72,10 +78,13 @@ impl User {
     }
 }
 
+// Public trait UserFunc for User struct functions
 pub  trait UserFunc: std::marker::Sized{
     async fn fill_info(self, session: &Arc<Session>) -> Result<Self>;
 }
 impl UserFunc for User {
+    
+    /// Filles up info about user besed on user id/email/jwt
     async fn fill_info(mut self, session: &Arc<Session>) -> Result<Self> {
         let mut res: QueryRowsResult;
         if let Some(user_id) = self.user_id{
