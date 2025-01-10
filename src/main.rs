@@ -11,6 +11,7 @@ use axum::routing::{get, post};
 use scylla::{ExecutionProfile, Session, SessionBuilder};
 use scylla::statement::Consistency;
 use crate::routes::users::getinfo::get_info;
+use crate::routes::users::getselfinfo::get_self_info;
 use crate::routes::users::register::register;
 use crate::routes::users::login::login;
 
@@ -40,6 +41,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .route("/api/v0/users/register", post(register))
         .route("/api/v0/users/login", post(login))
         .route("/api/v0/users/getInfo/{id}", get(get_info))
+        .route("/api/v0/users/getSelfInfo", post(get_self_info))
         .with_state(session);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
