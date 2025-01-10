@@ -20,6 +20,7 @@ pub struct User {
     pub status: Option<i8>,
     pub bannercolor: Option<String>,
     pub backgroundcolor: Option<String>,
+    pub isadmin: Option<bool>,
 }
 
 // User implementation of functions that return user objects from accessible data
@@ -40,6 +41,7 @@ impl User {
             status: None,
             bannercolor: None,
             backgroundcolor: None,
+            isadmin: None,
         }
     }
     /// Creates user object from user jwt
@@ -57,6 +59,7 @@ impl User {
             status: None,
             bannercolor: None,
             backgroundcolor: None,
+            isadmin: None,
         }
     }
 
@@ -75,6 +78,7 @@ impl User {
             status: None,
             bannercolor: None,
             backgroundcolor: None,
+            isadmin: None,
         }
     }
 }
@@ -90,25 +94,25 @@ impl UserFunc for User {
         let mut res: QueryRowsResult;
         // Fetch data if ID is present
         if let Some(user_id) = self.user_id{
-            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor FROM joltamp.users WHERE user_id = ? ALLOW FILTERING",
+            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor, isadmin FROM joltamp.users WHERE user_id = ? ALLOW FILTERING",
                                         (&user_id, )).await?.into_rows_result()?;
         }
         // Fetch data if JWT is present
         else if let Some(jwt) = self.jwt{
-            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor FROM joltamp.users WHERE jwt = ? ALLOW FILTERING",
+            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor, isadmin FROM joltamp.users WHERE jwt = ? ALLOW FILTERING",
                                         (&jwt, )).await?.into_rows_result()?;
         }
         // Fetch data if Email is present
         else if let Some(email) = self.email{
-            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor FROM joltamp.users WHERE email = ? ALLOW FILTERING",
+            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor, isadmin FROM joltamp.users WHERE email = ? ALLOW FILTERING",
                                         (&email, )).await?.into_rows_result()?;
         }
         // Return error if no data is provided
         else {
             return Err(Error::msg("Invalid"));
         }
-        let (createdat, user_id, jwt, username, email, password, displayname, raw_friends, badges, status, bannercolor, backgroundcolor)
-            = res.first_row::<(NaiveDate, Uuid, Uuid, String, String, String, String, HashMap<Uuid, i8>, Vec<Uuid>, i8, Option<String>, Option<String>)>()?;
+        let (createdat, user_id, jwt, username, email, password, displayname, raw_friends, badges, status, bannercolor, backgroundcolor, isadmin)
+            = res.first_row::<(NaiveDate, Uuid, Uuid, String, String, String, String, HashMap<Uuid, i8>, Vec<Uuid>, i8, Option<String>, Option<String>, Option<bool>)>()?;
 
         self.createdat = Some(createdat);
         self.user_id = Some(user_id);
@@ -122,6 +126,7 @@ impl UserFunc for User {
         self.status = Some(status);
         self.bannercolor = bannercolor;
         self.backgroundcolor = backgroundcolor;
+        self.isadmin = isadmin;
 
         Ok(self)
     }
