@@ -42,6 +42,7 @@ pub async fn is_admin(
     State(session): State<Arc<Session>>,
     Path(user_id): Path<Uuid>,
 ) -> (StatusCode, Json<ReturnType>) {
+    // Fetch user from db based on provided user_id
     let user = User::from_user_id(user_id).fill_info(&session).await;
     // Check if the user is fetched from db
     if let Ok(user) = user{
