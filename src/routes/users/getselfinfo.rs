@@ -45,6 +45,7 @@ pub async fn get_self_info(
     State(session): State<Arc<Session>>,
     headers: HeaderMap,
 ) -> (StatusCode, Json<ReturnType>) {
+    // Check if Authorization header is present
     if let Some(auth) = headers.get("Authorization") {
         let user = User::from_user_jwt(Uuid::parse_str(auth.to_str().unwrap_or("")).unwrap_or(Uuid::nil())).fill_info(&session).await;
         // Check if the user is fetched from db
@@ -66,6 +67,7 @@ pub async fn get_self_info(
             (StatusCode::UNAUTHORIZED, Json(ReturnType::Error(RequestError::from("User JWT not found"))))
         }   
     }else {
+        // Bad request error for missing Authorization header
         (StatusCode::BAD_REQUEST, Json(ReturnType::Error(RequestError::from("Invalid JWT"))))
     }
 }
