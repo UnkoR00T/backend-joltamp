@@ -24,7 +24,21 @@ pub enum ReturnType {
     },
     Error(RequestError),
 }
-
+/// Authenticates a user by verifying their email and password.
+///
+/// # Parameters
+///
+/// * `State(session)`: An `axum::extract::State` containing an `Arc<Session>` representing the Scylla database session.
+/// * `Json(mut payload)`: An `axum::extract::Json` containing a `RequestUser` struct representing the user's email and password.
+///
+/// # Returns
+///
+/// Returns a tuple containing a `StatusCode` and a `Json` containing a `ReturnType`.
+///
+/// * `StatusCode::OK`: If the user is successfully authenticated.
+/// * `ReturnType::ReturnUser`: Contains the user's ID and JWT if authentication is successful.
+/// * `StatusCode::UNAUTHORIZED`: If the user's email or password is invalid.
+/// * `ReturnType::Error`: Contains an error message if authentication fails.
 pub async fn login(
     State(session): State<Arc<Session>>,
     Json(mut payload): Json<RequestUser>,
