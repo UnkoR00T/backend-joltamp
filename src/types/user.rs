@@ -1,13 +1,14 @@
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::sync::Arc;
 use scylla::{QueryRowsResult, Session};
 use uuid::Uuid;
 use anyhow::{Error, Result};
-use scylla::frame::value::CqlDate;
+use chrono::NaiveDate;
 
 #[derive(Debug)]
 pub struct User {
-    pub createdat: Option<CqlDate>,
+    pub createdat: Option<NaiveDate>,
     pub user_id: Option<Uuid>,
     pub jwt: Option<Uuid>,
     pub username: Option<String>,
@@ -100,7 +101,7 @@ impl UserFunc for User {
             return Err(Error::msg("Invalid"));
         }
         let (createdat, user_id, jwt, username, email, password, displayname, raw_friends, badges, status, bannercolor, backgroundcolor)
-            = res.first_row::<(CqlDate, Uuid, Uuid, String, String, String, String, HashMap<Uuid, i8>, Vec<Uuid>, i8, Option<String>, Option<String>)>()?;
+            = res.first_row::<(NaiveDate, Uuid, Uuid, String, String, String, String, HashMap<Uuid, i8>, Vec<Uuid>, i8, Option<String>, Option<String>)>()?;
 
         self.createdat = Some(createdat);
         self.user_id = Some(user_id);

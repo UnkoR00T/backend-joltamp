@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde::de::StdError;
 use uuid::Uuid;
 use crate::security::passwords::hash_password;
-use crate::types::types::{RequestError, ReturnUser};
+use crate::types::types::{RequestError};
 
 #[derive(Deserialize)]
 pub struct RequestUser {
@@ -19,7 +19,10 @@ pub struct RequestUser {
 #[derive(Serialize)]
 #[serde(untagged)]
 pub enum ReturnType {
-    ReturnUser(ReturnUser),
+    ReturnUser{
+        user_id: Uuid,
+        jwt: Uuid,
+    },
     Error(RequestError),
 }
 
@@ -45,10 +48,10 @@ pub async fn register(
         return (StatusCode::INTERNAL_SERVER_ERROR, Json(ReturnType::Error(RequestError::from("register#0x01 Internal server error"))));
     }
     if let Ok(user) = insert_user(&session, &mut payload).await{
-        (StatusCode::CREATED, Json(ReturnType::ReturnUser(ReturnUser{
-            jwt: user.0.to_string(),
-            user_id: user.1.to_string(),
-        })))
+        (StatusCode::CREATED, Json(ReturnType::ReturnUser{
+            jwt: user.0,
+            user_id: user.1,
+        }))
     }else{
         (StatusCode::INTERNAL_SERVER_ERROR, Json(ReturnType::Error(RequestError::from("register#0x02 Internal server error"))))
     }

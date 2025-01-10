@@ -253,6 +253,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits",
+ "serde",
  "wasm-bindgen",
  "windows-targets",
 ]
@@ -939,6 +940,7 @@ dependencies = [
  "async-trait",
  "byteorder",
  "bytes",
+ "chrono",
  "lz4_flex",
  "scylla-macros",
  "snap",
@@ -1296,6 +1298,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8c5f0a0af699448548ad1a2fbf920fb4bee257eae39953ba95cb84891a0446a"
 dependencies = [
  "getrandom",
+ "serde",
 ]
 
 [[package]]

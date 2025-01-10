@@ -6,7 +6,7 @@ use scylla::Session;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use crate::security::passwords::verify_password;
-use crate::types::types::{RequestError, ReturnUser};
+use crate::types::types::{RequestError};
 use crate::types::user::{User, UserFunc};
 
 #[derive(Deserialize)]
@@ -18,7 +18,10 @@ pub struct RequestUser {
 #[derive(Serialize)]
 #[serde(untagged)]
 pub enum ReturnType {
-    ReturnUser(ReturnUser),
+    ReturnUser{
+        user_id: Uuid,
+        jwt: Uuid,
+    },
     Error(RequestError),
 }
 
@@ -34,7 +37,7 @@ pub async fn login(
         
         // Verify password
         if verify_password(&payload.password, &password).is_ok() {
-            return (StatusCode::OK, Json(ReturnType::ReturnUser(ReturnUser { jwt: user.jwt.unwrap_or(Uuid::nil()).to_string(), user_id: user.user_id.unwrap_or(Uuid::nil()).to_string(), })));
+            return (StatusCode::OK, Json(ReturnType::ReturnUser{ jwt: user.jwt.unwrap_or(Uuid::nil()), user_id: user.user_id.unwrap_or(Uuid::nil()), }));
         } else {
             return (StatusCode::UNAUTHORIZED, Json(ReturnType::Error(RequestError::from("Invalid password"))));
         };
