@@ -44,6 +44,7 @@ pub async fn login(
     Json(mut payload): Json<RequestUser>,
 ) -> (StatusCode, Json<ReturnType>) {
     
+    // Fetch user from db based on provided email
     let user: User = User::from_user_email(payload.email).fill_info(&session).await.unwrap();
     
     // Check if password was successfully fetched
@@ -53,6 +54,7 @@ pub async fn login(
         if verify_password(&payload.password, &password).is_ok() {
             return (StatusCode::OK, Json(ReturnType::ReturnUser{ jwt: user.jwt.unwrap_or(Uuid::nil()), user_id: user.user_id.unwrap_or(Uuid::nil()), }));
         } else {
+            // Failure while authorization
             return (StatusCode::UNAUTHORIZED, Json(ReturnType::Error(RequestError::from("Invalid password"))));
         };
     }

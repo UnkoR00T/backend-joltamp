@@ -50,7 +50,9 @@ pub async fn get_info(
     Path(user_id): Path<Uuid>,
 ) -> (StatusCode, Json<ReturnType>) {
     let user = User::from_user_id(user_id).fill_info(&session).await;
+    // Check if the user is fetched from db
     if let Ok(user) = user{
+        // Returns data to user
         (StatusCode::OK, Json(ReturnType::ReturnData {
             createdat: user.createdat.unwrap_or(NaiveDate::MIN).format("%Y-%m-%d").to_string(),
             user_id: user.user_id,
@@ -62,6 +64,7 @@ pub async fn get_info(
             backgroundcolor: user.backgroundcolor,
         }))
     }else{
+        // Bad request error for non existing user
         (StatusCode::BAD_REQUEST, Json(ReturnType::Error(RequestError::from("Incorrect userId"))))
     }
 

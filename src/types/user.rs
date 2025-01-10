@@ -88,16 +88,23 @@ impl UserFunc for User {
     /// Filles up info about user besed on user id/email/jwt
     async fn fill_info(mut self, session: &Arc<Session>) -> Result<Self> {
         let mut res: QueryRowsResult;
+        // Fetch data if ID is present
         if let Some(user_id) = self.user_id{
             res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor FROM joltamp.users WHERE user_id = ? ALLOW FILTERING",
                                         (&user_id, )).await?.into_rows_result()?;
-        }else if let Some(jwt) = self.jwt{
+        }
+        // Fetch data if JWT is present
+        else if let Some(jwt) = self.jwt{
             res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor FROM joltamp.users WHERE jwt = ? ALLOW FILTERING",
                                         (&jwt, )).await?.into_rows_result()?;
-        }else if let Some(email) = self.email{
+        }
+        // Fetch data if Email is present
+        else if let Some(email) = self.email{
             res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor FROM joltamp.users WHERE email = ? ALLOW FILTERING",
                                         (&email, )).await?.into_rows_result()?;
-        }else {
+        }
+        // Return error if no data is provided
+        else {
             return Err(Error::msg("Invalid"));
         }
         let (createdat, user_id, jwt, username, email, password, displayname, raw_friends, badges, status, bannercolor, backgroundcolor)
