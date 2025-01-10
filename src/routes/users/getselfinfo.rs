@@ -31,6 +31,16 @@ pub enum ReturnType {
     Error(RequestError),
 }
 
+/// Retrieves the self information of a user based on the provided JWT in the headers.
+///
+/// # Parameters
+/// - `State(session)`: An `Arc` wrapped `Session` object used to interact with the database.
+/// - `headers`: A `HeaderMap` containing the HTTP headers, which should include the "Authorization" header with the user's JWT.
+///
+/// # Returns
+/// A tuple containing:
+/// - `StatusCode`: The HTTP status code indicating the result of the operation.
+/// - `Json<ReturnType>`: A JSON response containing either the user's information or an error message.
 pub async fn get_self_info(
     State(session): State<Arc<Session>>,
     headers: HeaderMap,

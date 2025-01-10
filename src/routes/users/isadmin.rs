@@ -21,21 +21,23 @@ pub enum ReturnType {
     Error(RequestError),
 }
 
-/// Retrieves user information from the database based on the provided user ID.
+/// This function checks if a user with the given `user_id` is an admin.
 ///
 /// # Parameters
 ///
 /// * `State(session)`: An instance of `Arc<Session>` representing the database session.
-/// * `Path(user_id)`: A `Uuid` representing the user ID for which to retrieve information.
+/// * `Path(user_id)`: A `Uuid` representing the user's unique identifier.
 ///
-/// # Return
+/// # Return Value
 ///
 /// Returns a tuple containing a `StatusCode` and a `Json` object of type `ReturnType`.
 ///
-/// * `StatusCode::OK`: If the user information is successfully retrieved.
-/// * `ReturnType::ReturnData`: Contains the user information in the specified format.
-/// * `StatusCode::BAD_REQUEST`: If the provided user ID is incorrect.
-/// * `ReturnType::Error`: Contains an error message indicating the incorrect user ID.
+/// * `StatusCode::OK`: If the user is successfully fetched from the database.
+///   The `Json` object contains `ReturnType::ReturnData(Some(true))` if the user is an admin,
+///   or `ReturnType::ReturnData(Some(false))` if the user is not an admin.
+///
+/// * `StatusCode::BAD_REQUEST`: If the user with the given `user_id` does not exist in the database.
+///   The `Json` object contains `ReturnType::Error(RequestError::from("Incorrect userId"))`.
 pub async fn is_admin(
     State(session): State<Arc<Session>>,
     Path(user_id): Path<Uuid>,
