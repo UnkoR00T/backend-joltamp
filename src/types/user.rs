@@ -24,6 +24,62 @@ pub struct User {
 }
 
 // User implementation of functions that return user objects from accessible data
+
+// Public trait UserFunc for User struct functions
+pub  trait UserFunc: std::marker::Sized{
+    async fn fill_info(self, session: &Arc<Session>) -> Result<Self>;
+    async fn fetch_friends(self, session: &Arc<Session>) -> Result<Self>;
+}
+impl UserFunc for User {
+
+    /// Filles up info about user besed on user id/email/jwt
+    async fn fill_info(mut self, session: &Arc<Session>) -> Result<Self> {
+        let mut res: QueryRowsResult;
+        // Fetch data if ID is present
+        if let Some(user_id) = self.user_id{
+            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor, isadmin FROM joltamp.users WHERE user_id = ? ALLOW FILTERING",
+                                        (&user_id, )).await?.into_rows_result()?;
+        }
+        // Fetch data if JWT is present
+        else if let Some(jwt) = self.jwt{
+            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor, isadmin FROM joltamp.users WHERE jwt = ? ALLOW FILTERING",
+                                        (&jwt, )).await?.into_rows_result()?;
+        }
+        // Fetch data if Email is present
+        else if let Some(email) = self.email{
+            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor, isadmin FROM joltamp.users WHERE email = ? ALLOW FILTERING",
+                                        (&email, )).await?.into_rows_result()?;
+        }
+        // Return error if no data is provided
+        else {
+            return Err(Error::msg("Invalid"));
+        }
+        let (createdat, user_id, jwt, username, email, password, displayname, raw_friends, badges, status, bannercolor, backgroundcolor, isadmin)
+            = res.first_row::<(NaiveDate, Uuid, Uuid, String, String, String, String, HashMap<Uuid, i8>, Vec<Uuid>, i8, Option<String>, Option<String>, Option<bool>)>()?;
+
+        self.createdat = Some(createdat);
+        self.user_id = Some(user_id);
+        self.jwt = Some(jwt);
+        self.username = Some(username);
+        self.email = Some(email);
+        self.password = Some(password);
+        self.displayname = Some(displayname);
+        self.friends = Some(raw_friends);
+        self.badges = Some(badges);
+        self.status = Some(status);
+        self.bannercolor = bannercolor;
+        self.backgroundcolor = backgroundcolor;
+        self.isadmin = isadmin;
+
+        Ok(self)
+    }
+    async fn fetch_friends(self, session: &Arc<Session>) -> Result<Self> {
+        
+        todo!
+        
+        Ok(self)
+    }
+}
 impl User {
 
     /// Creates user object from user id
@@ -80,54 +136,5 @@ impl User {
             backgroundcolor: None,
             isadmin: None,
         }
-    }
-}
-
-// Public trait UserFunc for User struct functions
-pub  trait UserFunc: std::marker::Sized{
-    async fn fill_info(self, session: &Arc<Session>) -> Result<Self>;
-}
-impl UserFunc for User {
-    
-    /// Filles up info about user besed on user id/email/jwt
-    async fn fill_info(mut self, session: &Arc<Session>) -> Result<Self> {
-        let mut res: QueryRowsResult;
-        // Fetch data if ID is present
-        if let Some(user_id) = self.user_id{
-            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor, isadmin FROM joltamp.users WHERE user_id = ? ALLOW FILTERING",
-                                        (&user_id, )).await?.into_rows_result()?;
-        }
-        // Fetch data if JWT is present
-        else if let Some(jwt) = self.jwt{
-            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor, isadmin FROM joltamp.users WHERE jwt = ? ALLOW FILTERING",
-                                        (&jwt, )).await?.into_rows_result()?;
-        }
-        // Fetch data if Email is present
-        else if let Some(email) = self.email{
-            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor, isadmin FROM joltamp.users WHERE email = ? ALLOW FILTERING",
-                                        (&email, )).await?.into_rows_result()?;
-        }
-        // Return error if no data is provided
-        else {
-            return Err(Error::msg("Invalid"));
-        }
-        let (createdat, user_id, jwt, username, email, password, displayname, raw_friends, badges, status, bannercolor, backgroundcolor, isadmin)
-            = res.first_row::<(NaiveDate, Uuid, Uuid, String, String, String, String, HashMap<Uuid, i8>, Vec<Uuid>, i8, Option<String>, Option<String>, Option<bool>)>()?;
-
-        self.createdat = Some(createdat);
-        self.user_id = Some(user_id);
-        self.jwt = Some(jwt);
-        self.username = Some(username);
-        self.email = Some(email);
-        self.password = Some(password);
-        self.displayname = Some(displayname);
-        self.friends = Some(raw_friends);
-        self.badges = Some(badges);
-        self.status = Some(status);
-        self.bannercolor = bannercolor;
-        self.backgroundcolor = backgroundcolor;
-        self.isadmin = isadmin;
-
-        Ok(self)
     }
 }

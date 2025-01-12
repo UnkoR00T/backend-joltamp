@@ -34,16 +34,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .await?;
 
     let session = Arc::new(session);
+
     // SETUP AXUM
 
     tracing_subscriber::fmt::init();
     let app = Router::new()
         .route("/api/v0/", get(|| async {(StatusCode::OK, "All services running!")}))
+        .route("/api/v0/users/isAdmin/{id}", get(is_admin))
+        .route("/api/v0/users/getInfo/{id}", get(get_info))
         .route("/api/v0/users/register", post(register))
         .route("/api/v0/users/login", post(login))
-        .route("/api/v0/users/getInfo/{id}", get(get_info))
         .route("/api/v0/users/getSelfInfo", post(get_self_info))
-        .route("/api/v0/users/isAdmin/{id}", get(is_admin))
         .with_state(session);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();
