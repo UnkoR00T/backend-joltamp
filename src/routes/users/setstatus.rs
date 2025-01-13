@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use axum::extract::State;
-use axum::http::{HeaderMap, HeaderValue, StatusCode};
+use axum::http::{HeaderMap, StatusCode};
 use axum::Json;
 use scylla::Session;
 use serde::{Deserialize, Serialize};

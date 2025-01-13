@@ -5,7 +5,7 @@ use scylla::{QueryRowsResult, Session};
 use uuid::Uuid;
 use anyhow::{Error, Result};
 use chrono::NaiveDate;
-use crate::security::passwords::{hash_password, hash_password_ret};
+use crate::security::passwords::{hash_password};
 
 const ALLOWED_UPDATE_FIELDS: [&str; 6] = ["email", "password", "displayname", "status", "bannercolor", "backgroundcolor"];
 const ALLOWED_STATUS: [u8; 4] = [0, 1, 2, 3];
