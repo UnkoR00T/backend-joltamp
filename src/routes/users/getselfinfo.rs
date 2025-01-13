@@ -1,6 +1,6 @@
 use crate::types::types::RequestError;
 use crate::types::user::{User, UserFunc};
-use axum::extract::{Path, State};
+use axum::extract::{State};
 use axum::http::{HeaderMap, StatusCode};
 use axum::Json;
 use scylla::Session;

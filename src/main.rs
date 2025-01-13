@@ -15,13 +15,14 @@ use crate::routes::users::getselfinfo::get_self_info;
 use crate::routes::users::isadmin::is_admin;
 use crate::routes::users::register::register;
 use crate::routes::users::login::login;
+use crate::routes::users::setstatus::set_status;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     // SETUP SCYLLA DB
     let uri = std::env::var("SCYLLA_URI")
         .unwrap_or_else(|_| "172.17.0.2:9042".to_string());
-
+    println!("Trying to connect to ScyllaDB via uri: {}",uri);
     let handle = ExecutionProfile::builder()
         .consistency(Consistency::One)
         .build()
@@ -32,7 +33,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .default_execution_profile_handle(handle)
         .build()
         .await?;
-
+    println!("Connected to ScyllaDB");
     let session = Arc::new(session);
 
     // SETUP AXUM
@@ -45,6 +46,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .route("/api/v0/users/register", post(register))
         .route("/api/v0/users/login", post(login))
         .route("/api/v0/users/getSelfInfo", post(get_self_info))
+        .route("/api/v0/users/setStatus", post(set_status))
         .with_state(session);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();

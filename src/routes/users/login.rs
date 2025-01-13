@@ -41,7 +41,7 @@ pub enum ReturnType {
 /// * `ReturnType::Error`: Contains an error message if authentication fails.
 pub async fn login(
     State(session): State<Arc<Session>>,
-    Json(mut payload): Json<RequestUser>,
+    Json(payload): Json<RequestUser>,
 ) -> (StatusCode, Json<ReturnType>) {
     
     // Fetch user from db based on provided email

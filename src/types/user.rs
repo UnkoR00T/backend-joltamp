@@ -5,6 +5,10 @@ use scylla::{QueryRowsResult, Session};
 use uuid::Uuid;
 use anyhow::{Error, Result};
 use chrono::NaiveDate;
+use crate::security::passwords::{hash_password, hash_password_ret};
+
+const ALLOWED_UPDATE_FIELDS: [&str; 6] = ["email", "password", "displayname", "status", "bannercolor", "backgroundcolor"];
+const ALLOWED_STATUS: [u8; 4] = [0, 1, 2, 3];
 
 #[derive(Debug)]
 pub struct User {
@@ -29,6 +33,7 @@ pub struct User {
 pub  trait UserFunc: std::marker::Sized{
     async fn fill_info(self, session: &Arc<Session>) -> Result<Self>;
     async fn fetch_friends(self, session: &Arc<Session>) -> Result<Self>;
+    async fn update(self, session: &Arc<Session>, change_field: &str, new_value: String) -> Result<Self>;
 }
 impl UserFunc for User {
 
@@ -74,10 +79,49 @@ impl UserFunc for User {
         Ok(self)
     }
     async fn fetch_friends(self, session: &Arc<Session>) -> Result<Self> {
-        
-        todo!
-        
         Ok(self)
+    }
+
+    async fn update(mut self, session: &Arc<Session>, change_field: &str, mut new_value: String) -> Result<Self> {
+        if let None = self.jwt {
+            return Err(Error::msg("JWT is not set"));
+        }
+
+        if ALLOWED_UPDATE_FIELDS.contains(&change_field) {
+            if change_field == "password"{
+                new_value = hash_password(&mut new_value).unwrap();
+            }
+            if change_field == "status" && !ALLOWED_STATUS.contains(&new_value.parse::<u8>()?) {
+                return Err(Error::msg("Not allowed status!"));
+            }
+            if change_field == "email" && (!new_value.contains("@") || new_value.len() < 3){
+                return Err(Error::msg("Invalid email"));
+            }
+            let res = session.query_unpaged(format!("UPDATE joltamp.users SET {} = {} WHERE username = ? AND user_id = ? AND createdat = ?", &change_field, &new_value),
+                                            (&self.username, &self.user_id, &self.createdat)).await;
+            if let Err(err) = &res {
+                println!("{:?}", err);
+            }
+
+            if let Ok(_) = res {
+                match change_field {
+                    "email" => self.email = Some(new_value.to_string()),
+                    "password" => self.password = Some(new_value.to_string()),
+                    "displayname" => self.displayname = Some(new_value.to_string()),
+                    "status" => self.status = Some(new_value.parse::<i8>()?),
+                    "bannercolor" => self.bannercolor = Some(new_value.to_string()),
+                    "backgroundcolor" => self.backgroundcolor = Some(new_value.to_string()),
+                    _ => {
+                        return Err(Error::msg("Action not allowed"));
+                    }
+                }
+                Ok(self)
+            }else{
+                return Err(Error::msg("Update failed"));
+            }
+        }else{
+            Err(Error::msg("Field not allowed"))
+        }
     }
 }
 impl User {
