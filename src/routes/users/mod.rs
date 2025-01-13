@@ -4,3 +4,4 @@ pub mod getinfo;
 pub mod getselfinfo;
 pub mod isadmin;
 pub mod setstatus;
+pub mod changeselfinfo;

@@ -6,7 +6,6 @@ use axum::Json;
 use scylla::Session;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use chrono::NaiveDate;
 use uuid::Uuid;
 
 #[derive(Deserialize)]

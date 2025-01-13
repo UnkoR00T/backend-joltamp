@@ -20,14 +20,6 @@ pub fn hash_password(password: &mut String) -> Result<String, argon2::password_h
     Ok(hash.to_string())
 }
 
-pub fn hash_password_ret(password: &String) -> Result<String, argon2::password_hash::Error> {
-    let salt = SaltString::generate(&mut OsRng);
-    let argon2 = Argon2::default();
-    let hash = argon2.hash_password(password.as_bytes(), &salt)?;
-    let password = hash.to_string();
-    Ok(password)
-}
-
 /// Verifies a password against a hashed password using the Argon2 algorithm.
 ///
 /// # Parameters

@@ -7,7 +7,7 @@ use anyhow::{Error, Result};
 use chrono::NaiveDate;
 use crate::security::passwords::{hash_password};
 
-const ALLOWED_UPDATE_FIELDS: [&str; 6] = ["email", "password", "displayname", "status", "bannercolor", "backgroundcolor"];
+const ALLOWED_UPDATE_FIELDS: [&str; 7] = ["email", "password", "displayname", "status", "bannercolor", "backgroundcolor", "desc"];
 const ALLOWED_STATUS: [u8; 4] = [0, 1, 2, 3];
 
 #[derive(Debug)]
@@ -25,6 +25,7 @@ pub struct User {
     pub bannercolor: Option<String>,
     pub backgroundcolor: Option<String>,
     pub isadmin: Option<bool>,
+    pub desc: Option<String>,
 }
 
 // User implementation of functions that return user objects from accessible data
@@ -39,28 +40,28 @@ impl UserFunc for User {
 
     /// Filles up info about user besed on user id/email/jwt
     async fn fill_info(mut self, session: &Arc<Session>) -> Result<Self> {
-        let mut res: QueryRowsResult;
+        let res: QueryRowsResult;
         // Fetch data if ID is present
         if let Some(user_id) = self.user_id{
-            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor, isadmin FROM joltamp.users WHERE user_id = ? ALLOW FILTERING",
+            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor, isadmin, desc FROM joltamp.users WHERE user_id = ? ALLOW FILTERING",
                                         (&user_id, )).await?.into_rows_result()?;
         }
         // Fetch data if JWT is present
         else if let Some(jwt) = self.jwt{
-            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor, isadmin FROM joltamp.users WHERE jwt = ? ALLOW FILTERING",
+            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor, isadmin, desc FROM joltamp.users WHERE jwt = ? ALLOW FILTERING",
                                         (&jwt, )).await?.into_rows_result()?;
         }
         // Fetch data if Email is present
         else if let Some(email) = self.email{
-            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor, isadmin FROM joltamp.users WHERE email = ? ALLOW FILTERING",
+            res = session.query_unpaged("SELECT createdat, user_id, jwt, username, email, password, displayname, friends, badges, status, bannercolor, backgroundcolor, isadmin, desc FROM joltamp.users WHERE email = ? ALLOW FILTERING",
                                         (&email, )).await?.into_rows_result()?;
         }
         // Return error if no data is provided
         else {
             return Err(Error::msg("Invalid"));
         }
-        let (createdat, user_id, jwt, username, email, password, displayname, raw_friends, badges, status, bannercolor, backgroundcolor, isadmin)
-            = res.first_row::<(NaiveDate, Uuid, Uuid, String, String, String, String, HashMap<Uuid, i8>, Vec<Uuid>, i8, Option<String>, Option<String>, Option<bool>)>()?;
+        let (createdat, user_id, jwt, username, email, password, displayname, raw_friends, badges, status, bannercolor, backgroundcolor, isadmin, desc)
+            = res.first_row::<(NaiveDate, Uuid, Uuid, String, String, String, String, HashMap<Uuid, i8>, Vec<Uuid>, i8, Option<String>, Option<String>, Option<bool>, Option<String>)>()?;
 
         self.createdat = Some(createdat);
         self.user_id = Some(user_id);
@@ -75,6 +76,7 @@ impl UserFunc for User {
         self.bannercolor = bannercolor;
         self.backgroundcolor = backgroundcolor;
         self.isadmin = isadmin;
+        self.desc = desc;
 
         Ok(self)
     }
@@ -87,6 +89,8 @@ impl UserFunc for User {
             return Err(Error::msg("JWT is not set"));
         }
 
+        println!("{}, {}", change_field, new_value);
+
         if ALLOWED_UPDATE_FIELDS.contains(&change_field) {
             if change_field == "password"{
                 new_value = hash_password(&mut new_value).unwrap();
@@ -97,12 +101,8 @@ impl UserFunc for User {
             if change_field == "email" && (!new_value.contains("@") || new_value.len() < 3){
                 return Err(Error::msg("Invalid email"));
             }
-            let res = session.query_unpaged(format!("UPDATE joltamp.users SET {} = {} WHERE username = ? AND user_id = ? AND createdat = ?", &change_field, &new_value),
-                                            (&self.username, &self.user_id, &self.createdat)).await;
-            if let Err(err) = &res {
-                println!("{:?}", err);
-            }
-
+            let res = session.query_unpaged(format!("UPDATE joltamp.users SET {} = ? WHERE username = ? AND user_id = ? AND createdat = ?", &change_field),
+                                            (&new_value, &self.username, &self.user_id, &self.createdat)).await;
             if let Ok(_) = res {
                 match change_field {
                     "email" => self.email = Some(new_value.to_string()),
@@ -142,6 +142,7 @@ impl User {
             bannercolor: None,
             backgroundcolor: None,
             isadmin: None,
+            desc: None,
         }
     }
     /// Creates user object from user jwt
@@ -160,6 +161,7 @@ impl User {
             bannercolor: None,
             backgroundcolor: None,
             isadmin: None,
+            desc: None,
         }
     }
 
@@ -179,6 +181,7 @@ impl User {
             bannercolor: None,
             backgroundcolor: None,
             isadmin: None,
+            desc: None,
         }
     }
 }

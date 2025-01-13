@@ -8,9 +8,10 @@ use uuid::Uuid;
 use crate::types::types::{RequestError};
 use crate::types::user::{User, UserFunc};
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize)]
 pub struct RequestUser {
-    status: u8,
+    field: String,
+    newValue: String,
 }
 
 #[derive(Serialize)]
@@ -19,7 +20,7 @@ pub enum ReturnType {
     Ok,
     Error(RequestError),
 }
-pub async fn set_status(
+pub async fn change_selfinfo(
     State(session): State<Arc<Session>>,
     headers: HeaderMap,
     Json(payload): Json<RequestUser>,
@@ -29,7 +30,7 @@ pub async fn set_status(
         // Fetch user from db based on provided jwt
         let user = User::from_user_jwt(Uuid::parse_str(auth.to_str().unwrap_or("")).unwrap_or(Uuid::nil())).fill_info(&session).await;
         if let Ok(user) = user{
-            let res = user.update(&session, "status", payload.status.to_string()).await;
+            let res = user.update(&session, payload.field.as_str(), payload.newValue).await;
             if let Err(err) = &res {
                 (StatusCode::BAD_REQUEST, Json(ReturnType::Error(RequestError::from(err.to_string()))))
             }else{
