@@ -76,7 +76,7 @@ async fn check_username_free(session: &Arc<Session>, username: &String, email: &
 async fn insert_user(session: &Arc<Session>, payload: &mut RequestUser) -> Result<(Uuid, Uuid), Box<dyn StdError>> {
     let gen_jwt = Uuid::new_v4();
     let gen_user_id = Uuid::new_v4();
-    hash_password(&mut payload.password).expect("Hashing error, disabling for safety.");
+    payload.password = hash_password(&mut payload.password).unwrap();
     session.query_unpaged("INSERT INTO joltamp.users (createdat, user_id, username, displayname, email, password, isadmin, jwt, status) VALUES (todate(now()), ?, ?, ?, ?, ?, false, ?, 0)",
                                      (gen_user_id, &payload.username, &payload.username, &payload.email, &payload.password, gen_jwt)
     ).await?;
