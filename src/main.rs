@@ -10,6 +10,7 @@ use axum::Router;
 use axum::routing::{get, post};
 use scylla::{ExecutionProfile, Session, SessionBuilder};
 use scylla::statement::Consistency;
+use crate::routes::friends::getfriends::get_friends;
 use crate::routes::users::changeselfinfo::change_selfinfo;
 use crate::routes::users::getinfo::get_info;
 use crate::routes::users::getselfinfo::get_self_info;
@@ -49,6 +50,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .route("/api/v0/users/getSelfInfo", post(get_self_info))
         .route("/api/v0/users/setStatus", post(set_status))
         .route("/api/v0/users/changeSelfInfo", post(change_selfinfo))
+        .route("/api/v0/friends/", post(get_friends))
         .with_state(session);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8000").await.unwrap();

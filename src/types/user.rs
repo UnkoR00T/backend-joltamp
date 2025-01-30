@@ -6,11 +6,11 @@ use uuid::Uuid;
 use anyhow::{Error, Result};
 use chrono::NaiveDate;
 use crate::security::passwords::{hash_password};
+use crate::types::friend::{Friend, FriendFunc};
 
 const ALLOWED_UPDATE_FIELDS: [&str; 7] = ["email", "password", "displayname", "status", "bannercolor", "backgroundcolor", "desc"];
 const ALLOWED_STATUS: [u8; 4] = [0, 1, 2, 3];
 
-#[derive(Debug)]
 pub struct User {
     pub createdat: Option<NaiveDate>,
     pub user_id: Option<Uuid>,
@@ -19,7 +19,7 @@ pub struct User {
     pub email: Option<String>,
     pub password: Option<String>,
     pub displayname: Option<String>,
-    pub friends: Option<HashMap<Uuid, i8>>,
+    pub friends: Option<HashMap<Uuid, Friend>>,
     pub badges: Option<Vec<Uuid>>,
     pub status: Option<i8>,
     pub bannercolor: Option<String>,
@@ -35,6 +35,7 @@ pub  trait UserFunc: std::marker::Sized{
     async fn fill_info(self, session: &Arc<Session>) -> Result<Self>;
     async fn fetch_friends(self, session: &Arc<Session>) -> Result<Self>;
     async fn update(self, session: &Arc<Session>, change_field: &str, new_value: String) -> Result<Self>;
+    async fn add_friend(self, session: &Arc<Session>, friend_id: Uuid, friend_status: u8) -> Result<Self>;
 }
 impl UserFunc for User {
 
@@ -70,7 +71,6 @@ impl UserFunc for User {
         self.email = Some(email);
         self.password = Some(password);
         self.displayname = Some(displayname);
-        self.friends = Some(raw_friends);
         self.badges = Some(badges);
         self.status = Some(status);
         self.bannercolor = bannercolor;
@@ -80,7 +80,29 @@ impl UserFunc for User {
 
         Ok(self)
     }
-    async fn fetch_friends(self, session: &Arc<Session>) -> Result<Self> {
+    async fn fetch_friends(mut self, session: &Arc<Session>) -> Result<Self> {
+
+        let res = session.query_unpaged("SELECT friends FROM joltamp.users WHERE createdat = ? AND user_id = ? AND username = ?",
+                              (&self.createdat, &self.user_id, &self.username)).await;
+
+        if let Err(err) = &res{
+            println!("{:?}", err);
+        }
+
+        if let Ok(friends) = res {
+            let (friends, ) = friends.into_rows_result()?.first_row::<(HashMap<Uuid, i8>, )>()?;
+            let mut returnFriends: HashMap<Uuid, Friend> = HashMap::new();
+            for friend in friends {
+                let friend = Friend::from_uuid(friend.0, friend.1).fill_info(&session).await.unwrap();
+                returnFriends.insert(friend.user_id.clone(), friend);
+            }
+
+            self.friends = Some(returnFriends);
+
+        }else{
+            return Err(Error::msg("Cannot fetch friends"));
+        }
+
         Ok(self)
     }
 
@@ -122,6 +144,29 @@ impl UserFunc for User {
         }else{
             Err(Error::msg("Field not allowed"))
         }
+    }
+    async fn add_friend(mut self, session: &Arc<Session>, friend_id: Uuid, friend_status: u8) -> Result<Self> {
+
+        if let None = self.friends {
+            self = self.fetch_friends(session).await?;
+        }
+        
+        if self.friends.as_ref().unwrap().contains_key(&friend_id) {
+            let res = session.query_unpaged("UPDATE joltamp.users SET friends = friends + {?: ?} WHERE user_id = ? AND createdat = ? AND username = ?",
+                                            (friend_id, 2, &self.user_id, &self.createdat, &self.username)).await;
+
+            if let Err(_) = res{
+                return Err(Error::msg("Cannot update user friends"));
+            }
+        }else {
+            let res = session.query_unpaged("UPDATE joltamp.users SET friends = friends + {?: ?} WHERE user_id = ? AND createdat = ? AND username = ?",
+                                            (friend_id, friend_status as i8, &self.user_id, &self.createdat, &self.username)).await;
+
+            if let Err(_) = res{
+                return Err(Error::msg("Cannot update user friends"));
+            }
+        }
+        Ok(self)
     }
 }
 impl User {
